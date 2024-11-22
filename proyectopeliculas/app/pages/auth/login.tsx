@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { CircleArrowLeft, Eye, EyeOff, Ticket } from "lucide-react";
 
 interface SignUpModalProps {
@@ -15,6 +16,11 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -25,6 +31,29 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
 
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        onClose();
+      }
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const styles = {
     overlay: {
@@ -249,7 +278,6 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
     >
       <div style={styles.modal}>
         <div style={styles.content}>
-          {/* Left Side */}
           <div style={styles.leftSide}>
             <button style={styles.backButton} onClick={onClose}>
               <CircleArrowLeft size={20} />
@@ -266,20 +294,43 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
               </button>
             </div>
 
-            <div style={styles.formContainer}>
+            <form onSubmit={handleLogin} style={styles.formContainer}>
               <h2 style={styles.welcomeText}>We love having you back</h2>
 
+              {error && (
+                <div
+                  style={{
+                    color: "red",
+                    textAlign: "center",
+                    marginBottom: "10px",
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+
               <div style={styles.inputContainer}>
-                <input type="email" placeholder="Email" style={styles.input} />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={styles.input}
+                  required
+                />
               </div>
 
               <div style={styles.inputContainer}>
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   style={styles.input}
+                  required
                 />
                 <button
+                  type="button"
                   style={styles.passwordToggle}
                   onClick={() => setShowPassword(!showPassword)}
                 >
@@ -287,17 +338,24 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
                 </button>
               </div>
 
-              <button style={styles.continueButton}>
-                Continue <Ticket size={14} />
+              <button
+                type="submit"
+                style={{
+                  ...styles.continueButton,
+                  opacity: loading ? 0.7 : 1,
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
+                disabled={loading}
+              >
+                {loading ? "Loading..." : "Continue"} <Ticket size={14} />
               </button>
-            </div>
+            </form>
 
             <div style={styles.footerText}>
               For any questions, reach out to support@quickbetmovies.com
             </div>
           </div>
 
-          {/* Right Side */}
           <div style={styles.rightSide}>
             <div>
               <h1 style={styles.title}>Welcome back to Quickbet Movies!</h1>

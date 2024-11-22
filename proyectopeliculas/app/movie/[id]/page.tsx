@@ -1,4 +1,3 @@
-// app/movie/[id]/page.tsx
 "use client";
 import { useRouter, useParams } from "next/navigation";
 import MovieDetailsView from "@/app/pages/Details/moviedetails";

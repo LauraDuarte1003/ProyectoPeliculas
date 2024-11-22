@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CircleArrowLeft } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { CircleArrowLeft, Eye, EyeOff } from "lucide-react";
 
 interface SignUpProps {
   onClose: () => void;
@@ -13,6 +14,12 @@ const SignUpComponent: React.FC<SignUpProps> = ({
   onSwitchToLogin,
 }) => {
   const [isMobile, setIsMobile] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -24,6 +31,31 @@ const SignUpComponent: React.FC<SignUpProps> = ({
 
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+
+      alert("Check your email for the confirmation link!");
+      onClose();
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const styles = {
     overlay: {
@@ -156,6 +188,34 @@ const SignUpComponent: React.FC<SignUpProps> = ({
       marginTop: "20px",
     },
 
+    input: {
+      width: "90%",
+      padding: "11px",
+      backgroundColor: "white",
+      border: "1px solid #ccc",
+      borderRadius: "8px 8px 0 0",
+      fontSize: "12px",
+      color: "black",
+    },
+
+    inputContainer: {
+      position: "relative" as const,
+      width: "100%",
+      display: "flex",
+      justifyContent: "center",
+    },
+
+    passwordToggle: {
+      position: "absolute" as const,
+      right: "10%",
+      top: "50%",
+      transform: "translateY(-50%)",
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      color: "#6B7280",
+    },
+
     registerButton: {
       width: "90%",
       padding: "11px",
@@ -222,7 +282,6 @@ const SignUpComponent: React.FC<SignUpProps> = ({
     >
       <div style={styles.modal}>
         <div style={styles.content}>
-          {/* Left Side */}
           <div style={styles.leftSide}>
             <button style={styles.backButton} onClick={onClose}>
               <CircleArrowLeft size={20} />
@@ -239,18 +298,77 @@ const SignUpComponent: React.FC<SignUpProps> = ({
               <button style={styles.buttonYellow}>Sign up</button>
             </div>
 
-            <div style={styles.formContainer}>
-              <button style={styles.registerButton}>
-                Register with your Email ✉
-              </button>
-            </div>
+            {!showForm ? (
+              <div style={styles.formContainer}>
+                <button
+                  style={styles.registerButton}
+                  onClick={() => setShowForm(true)}
+                >
+                  Register with your Email ✉
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSignUp} style={styles.formContainer}>
+                {error && (
+                  <div
+                    style={{
+                      color: "red",
+                      textAlign: "center",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    {error}
+                  </div>
+                )}
+
+                <div style={styles.inputContainer}>
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+
+                <div style={styles.inputContainer}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={styles.input}
+                    required
+                  />
+                  <button
+                    type="button"
+                    style={styles.passwordToggle}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    ...styles.registerButton,
+                    opacity: loading ? 0.7 : 1,
+                    cursor: loading ? "not-allowed" : "pointer",
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? "Creating account..." : "Register with Email"} ✉
+                </button>
+              </form>
+            )}
 
             <div style={styles.footerText}>
               For any questions, reach out to support@quickbetmovies.com
             </div>
           </div>
 
-          {/* Right Side */}
           <div style={styles.rightSide}>
             <div>
               <h1 style={styles.title}>Welcome to Quickbet Movies!</h1>

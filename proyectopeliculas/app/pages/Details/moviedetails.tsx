@@ -105,12 +105,10 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
     );
   }
 
-  // Calculate the rating percentage from vote_average
   const ratingPercentage = Math.round(movie.vote_average * 10);
 
   return (
     <div style={{ backgroundColor: "#1a1a1a", minHeight: "100vh" }}>
-      {/* ... (previous code remains the same until the rating section) ... */}
       <div
         style={{
           position: "relative",
@@ -170,7 +168,6 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
               gap: "40px",
             }}
           >
-            {/* Poster Section */}
             <div>
               <img
                 src={`${IMAGE_BASE_URL}${movie.poster_path}`}
@@ -209,7 +206,6 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
               )}
             </div>
 
-            {/* Info Section */}
             <div>
               <h1
                 style={{
@@ -333,7 +329,6 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
         </div>
       </div>
 
-      {/* Recommendations section remains the same */}
       {recommendations.length > 0 && (
         <div style={{ padding: "40px" }}>
           <h2

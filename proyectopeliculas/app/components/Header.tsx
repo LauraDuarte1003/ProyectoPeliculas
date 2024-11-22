@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { User } from "lucide-react";
+import { CircleUserRound } from "lucide-react";
 import SignUpModal from "../pages/auth/login";
 import SignUpComponent from "../pages/auth/signup";
+import { useAuth } from "@/contexts/AuthContext";
 
-const styles = {
+const baseStyles = {
   header: {
     width: "100%",
     background: "#000000",
@@ -58,12 +59,65 @@ const styles = {
     height: "40px",
     transition: "all 0.2s",
   },
+
+  dropdownMenu: {
+    position: "absolute" as const,
+    top: "100%",
+    right: "0",
+    backgroundColor: "#18181B",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: "8px",
+    padding: "8px 0",
+    marginTop: "8px",
+    minWidth: "150px",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+  },
+
+  menuItem: {
+    display: "block",
+    width: "100%",
+    padding: "8px 16px",
+    border: "none",
+    background: "none",
+    color: "white",
+    textAlign: "left" as const,
+    fontSize: "14px",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+  },
+
+  menuEmail: {
+    padding: "8px 16px",
+    color: "#999",
+    fontSize: "12px",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+  },
 } as const;
 
 const Header: React.FC = () => {
+  const { user, signOut } = useAuth();
   const [currentModal, setCurrentModal] = useState<"none" | "login" | "signup">(
     "none"
   );
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        buttonRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleCloseModal = () => {
     setCurrentModal("none");
@@ -77,46 +131,94 @@ const Header: React.FC = () => {
     setCurrentModal("login");
   };
 
-  const handleOpenModal = () => {
+  const handleButtonClick = () => {
+    setShowMenu(!showMenu);
+  };
+
+  const handleLogin = () => {
+    setShowMenu(false);
     setCurrentModal("login");
   };
 
-  const handleButtonHover = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-  };
-
-  const handleButtonLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.backgroundColor = "transparent";
+  const handleLogout = async () => {
+    if (window.confirm("¿Estás seguro que deseas cerrar sesión?")) {
+      await signOut();
+      setShowMenu(false);
+    }
   };
 
   return (
     <>
-      <header style={styles.header}>
-        <div style={styles.logoContainer}>
+      <header style={baseStyles.header}>
+        <div style={baseStyles.logoContainer}>
           <img
             src="/Logo.jpeg"
             alt="QuickBet Movies Logo"
-            style={styles.logo}
+            style={baseStyles.logo}
           />
-
-          <nav style={styles.nav}>
-            <Link href="/" style={styles.link}>
+          <nav style={baseStyles.nav}>
+            <Link href="/" style={baseStyles.link}>
               Popular
             </Link>
-            <Link href="/favorites" style={styles.link}>
+            <Link href="/favorites" style={baseStyles.link}>
               Favorites
             </Link>
           </nav>
         </div>
 
-        <button
-          onClick={handleOpenModal}
-          style={styles.userButton}
-          onMouseOver={handleButtonHover}
-          onMouseOut={handleButtonLeave}
-        >
-          <User size={20} />
-        </button>
+        <div style={{ position: "relative" }}>
+          <button
+            ref={buttonRef}
+            onClick={handleButtonClick}
+            style={{
+              ...baseStyles.userButton,
+              borderColor: user ? "#FBBF24" : "white",
+              color: user ? "#FBBF24" : "white",
+            }}
+          >
+            <CircleUserRound size={50} />
+          </button>
+
+          {showMenu && (
+            <div ref={menuRef} style={baseStyles.dropdownMenu}>
+              {user ? (
+                <>
+                  <div style={baseStyles.menuEmail}>{user.email}</div>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      ...baseStyles.menuItem,
+                      color: "#ff4444",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(255, 68, 68, 0.1)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleLogin}
+                  style={baseStyles.menuItem}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(255, 255, 255, 0.1)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  Login
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </header>
 
       {currentModal === "login" && (
