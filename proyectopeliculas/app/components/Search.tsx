@@ -1,165 +1,208 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, CSSProperties } from "react";
+import axios from "axios";
 
-const Search: React.FC = () => {
+const API_KEY = "07ae841cba8689091077a34ea07ab14d";
+const BASE_URL = "https://api.themoviedb.org/3";
+
+interface Genre {
+  id: number;
+  name: string;
+}
+
+interface SearchProps {
+  onSearchResults: (movies: any[]) => void;
+}
+
+const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
   const [isGenresOpen, setIsGenresOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState<string>("All Genres");
+  const [genres, setGenres] = useState<Genre[]>([]);
+
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const response = await axios.get(
+          `${BASE_URL}/genre/movie/list?api_key=${API_KEY}&language=en-US`
+        );
+        setGenres(response.data.genres);
+      } catch (error) {
+        console.error("Error fetching genres:", error);
+      }
+    };
+    fetchGenres();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".genres-dropdown")) {
+        setIsGenresOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const searchMovies = async (query: string) => {
+    try {
+      if (!query.trim()) {
+        onSearchResults([]);
+        return;
+      }
+      const response = await axios.get(
+        `${BASE_URL}/search/movie?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(
+          query
+        )}&page=1`
+      );
+      onSearchResults(response.data.results);
+    } catch (error) {
+      console.error("Error searching movies:", error);
+      onSearchResults([]);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    const debounceTimeout = setTimeout(() => searchMovies(query), 500);
+    return () => clearTimeout(debounceTimeout);
+  };
+
+  const handleGenreSelect = async (genreId: number, genreName: string) => {
+    try {
+      setSelectedGenre(genreName);
+      setIsGenresOpen(false);
+
+      if (genreId === 0) {
+        onSearchResults([]);
+        return;
+      }
+
+      const response = await axios.get(
+        `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=${genreId}&page=1`
+      );
+      onSearchResults(response.data.results);
+    } catch (error) {
+      console.error("Error fetching movies by genre:", error);
+      onSearchResults([]);
+    }
+  };
+
+  const styles = {
+    container: {
+      padding: "20px",
+      backgroundColor: "#1a1a1a",
+      height: "100%",
+    } as CSSProperties,
+    title: {
+      color: "white",
+      fontSize: "16px",
+      marginBottom: "10px",
+      fontWeight: "500",
+    } as CSSProperties,
+    searchSection: {
+      marginBottom: "20px",
+    } as CSSProperties,
+    searchInput: {
+      width: "100%",
+      padding: "8px 12px",
+      backgroundColor: "#121212",
+      border: "1px solid #232323",
+      borderRadius: "4px",
+      color: "white",
+      fontSize: "14px",
+    } as CSSProperties,
+    genresContainer: {
+      position: "relative",
+      width: "100%",
+    } as CSSProperties,
+    genresButton: {
+      width: "100%",
+      padding: "8px 12px",
+      backgroundColor: "#121212",
+      border: "1px solid #232323",
+      borderRadius: "4px",
+      color: "#999",
+      textAlign: "left",
+      cursor: "pointer",
+    } as CSSProperties,
+    dropdownContent: {
+      position: "absolute",
+      top: "100%",
+      left: 0,
+      right: 0,
+      backgroundColor: "#121212",
+      border: "1px solid #232323",
+      borderRadius: "4px",
+      maxHeight: "300px",
+      overflowY: "auto",
+      zIndex: 1000,
+    } as CSSProperties,
+    genreOption: {
+      width: "100%",
+      padding: "8px 12px",
+      backgroundColor: "transparent",
+      border: "none",
+      color: "white",
+      textAlign: "left",
+      cursor: "pointer",
+      transition: "background-color 0.2s",
+    } as CSSProperties,
+  };
 
   return (
-    <div
-      style={{
-        padding: "15px",
-        height: "100vh",
-        width: "100%", // El ancho ahora se ajusta al contenedor padre
-        backgroundColor: "#1e1e1e", // Fondo oscuro
-        borderRight: "1px solid rgba(255, 255, 255, 0.1)", // Borde derecho
-        overflowY: "auto", // Habilitar desplazamiento vertical si es necesario
-      }}
-    >
-      <div style={{ marginBottom: "20px" }}>
-        <h2
-          style={{
-            color: "white",
-            fontSize: "16px",
-            marginBottom: "10px",
-          }}
-        >
-          Search
-        </h2>
-
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <input
-            type="text"
-            placeholder="Keywords"
-            style={{
-              flex: 1,
-              backgroundColor: "#121212",
-              border: "none",
-              padding: "8px",
-              color: "white",
-              height: "32px",
-            }}
-          />
-          <button
-            style={{
-              backgroundColor: "#232323",
-              border: "none",
-              padding: "8px",
-              cursor: "pointer",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
-        </div>
+    <div style={styles.container}>
+      <div style={styles.searchSection}>
+        <h2 style={styles.title}>Search</h2>
+        <input
+          type="text"
+          placeholder="Keywords"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          style={styles.searchInput}
+        />
       </div>
 
       <div>
-        <h2
-          style={{
-            color: "white",
-            fontSize: "16px",
-            marginBottom: "10px",
-          }}
-        >
-          Genres
-        </h2>
-
-        <div style={{ position: "relative" }}>
+        <h2 style={styles.title}>Genres</h2>
+        <div style={styles.genresContainer} className="genres-dropdown">
           <button
             onClick={() => setIsGenresOpen(!isGenresOpen)}
-            style={{
-              width: "100%",
-              backgroundColor: "#121212",
-              border: "none",
-              padding: "8px",
-              color: "#999999",
-              textAlign: "left",
-              cursor: "pointer",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              height: "32px",
-            }}
+            style={styles.genresButton}
           >
-            <span>Select Genre</span>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              style={{
-                transform: isGenresOpen ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.2s",
-              }}
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+            {selectedGenre}
           </button>
 
           {isGenresOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                right: 0,
-                backgroundColor: "#121212",
-                maxHeight: "300px",
-                overflowY: "auto",
-                zIndex: 10,
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              {[
-                "Action",
-                "Adventure",
-                "Animation",
-                "Comedy",
-                "Crime",
-                "Documentary",
-                "Drama",
-                "Family",
-                "Fantasy",
-                "History",
-                "Horror",
-                "Music",
-                "Mystery",
-              ].map((genre) => (
+            <div style={styles.dropdownContent}>
+              <button
+                style={styles.genreOption}
+                onClick={() => handleGenreSelect(0, "All Genres")}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#2a2a2a";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                All Genres
+              </button>
+              {genres.map((genre) => (
                 <button
-                  key={genre}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    color: "white",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    height: "32px",
-                  }}
+                  key={genre.id}
+                  style={styles.genreOption}
+                  onClick={() => handleGenreSelect(genre.id, genre.name)}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#333333";
+                    e.currentTarget.style.backgroundColor = "#2a2a2a";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
-                  {genre}
+                  {genre.name}
                 </button>
               ))}
             </div>

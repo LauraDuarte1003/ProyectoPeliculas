@@ -1,18 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CircleArrowLeft, Eye, EyeOff, Ticket } from "lucide-react";
+import { CircleArrowLeft } from "lucide-react";
 
-interface SignUpModalProps {
+interface SignUpProps {
   onClose: () => void;
-  onSwitchToSignUp: () => void;
+  onSwitchToLogin: () => void;
 }
 
-const SignUpModal: React.FC<SignUpModalProps> = ({
+const SignUpComponent: React.FC<SignUpProps> = ({
   onClose,
-  onSwitchToSignUp,
+  onSwitchToLogin,
 }) => {
-  const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -157,35 +156,7 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
       marginTop: "20px",
     },
 
-    inputContainer: {
-      position: "relative" as const,
-      width: "100%",
-      display: "flex",
-      justifyContent: "center",
-    },
-
-    input: {
-      width: "90%",
-      padding: "11px",
-      backgroundColor: "white",
-      border: "1px solid #ccc",
-      borderRadius: "8px 8px 0 0",
-      fontSize: "12px",
-      color: "black",
-    },
-
-    passwordToggle: {
-      position: "absolute" as const,
-      right: "10%",
-      top: "50%",
-      transform: "translateY(-50%)",
-      background: "none",
-      border: "none",
-      cursor: "pointer",
-      color: "#6B7280",
-    },
-
-    continueButton: {
+    registerButton: {
       width: "90%",
       padding: "11px",
       backgroundColor: "#FBBF24",
@@ -204,7 +175,7 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
 
     title: {
       color: "white",
-      fontSize: "36px",
+      fontSize: isMobile ? "28px" : "36px",
       fontWeight: "bold",
       marginBottom: "16px",
       textAlign: "center" as const,
@@ -212,9 +183,11 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
 
     description: {
       color: "rgba(255, 255, 255, 0.8)",
-      fontSize: "18px",
+      fontSize: isMobile ? "16px" : "18px",
       textAlign: "center" as const,
       marginBottom: "32px",
+      maxWidth: "400px",
+      lineHeight: "1.5",
     },
 
     footerText: {
@@ -229,8 +202,8 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
     },
 
     avatarImage: {
-      width: "380px",
-      height: "380px",
+      width: isMobile ? "280px" : "380px",
+      height: isMobile ? "280px" : "380px",
       objectFit: "contain" as const,
       position: "absolute" as const,
       bottom: "-10px",
@@ -257,38 +230,18 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
             </button>
 
             <div style={styles.buttonsTop}>
-              <button style={styles.buttonYellow}>Log In</button>
               <button
                 style={styles.buttonTransparent}
-                onClick={onSwitchToSignUp}
+                onClick={onSwitchToLogin}
               >
-                Sign Up
+                Log In
               </button>
+              <button style={styles.buttonYellow}>Sign up</button>
             </div>
 
             <div style={styles.formContainer}>
-              <h2 style={styles.welcomeText}>We love having you back</h2>
-
-              <div style={styles.inputContainer}>
-                <input type="email" placeholder="Email" style={styles.input} />
-              </div>
-
-              <div style={styles.inputContainer}>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  style={styles.input}
-                />
-                <button
-                  style={styles.passwordToggle}
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-
-              <button style={styles.continueButton}>
-                Continue <Ticket size={14} />
+              <button style={styles.registerButton}>
+                Register with your Email ✉
               </button>
             </div>
 
@@ -300,14 +253,18 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
           {/* Right Side */}
           <div style={styles.rightSide}>
             <div>
-              <h1 style={styles.title}>Welcome back to Quickbet Movies!</h1>
+              <h1 style={styles.title}>Welcome to Quickbet Movies!</h1>
               <p style={styles.description}>
-                🍿Ready to dive into the world of unlimited entertainment? Enter
-                your credentials and let the cinematic adventure begin!
+                🎬 Ready to unlock a universe of cinematic delights? Sign up now
+                and start your journey with us!
               </p>
             </div>
 
-            <img src="./login.png" alt="3D Avatar" style={styles.avatarImage} />
+            <img
+              src="./signup.png"
+              alt="3D Avatar"
+              style={styles.avatarImage}
+            />
           </div>
         </div>
       </div>
@@ -315,4 +272,4 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
   );
 };
 
-export default SignUpModal;
+export default SignUpComponent;
