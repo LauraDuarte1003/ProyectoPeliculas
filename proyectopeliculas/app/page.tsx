@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState } from "react";
 import Search from "./components/Search";
@@ -6,6 +7,7 @@ import Banner from "./components/Banner";
 
 export default function Home() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showFavorites] = useState(false);
 
   return (
     <div
@@ -44,7 +46,10 @@ export default function Home() {
           }}
           className="responsive-maincontent"
         >
-          <MainContent searchResults={searchResults} />
+          <MainContent
+            searchResults={searchResults}
+            showFavorites={showFavorites}
+          />
         </div>
       </div>
 

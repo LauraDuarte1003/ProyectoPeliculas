@@ -1,11 +1,15 @@
 "use client";
-
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { CircleUserRound } from "lucide-react";
 import SignUpModal from "../pages/auth/login";
 import SignUpComponent from "../pages/auth/signup";
 import { useAuth } from "@/contexts/AuthContext";
+
+interface HeaderProps {
+  onToggleFavorites: () => void;
+  showFavorites: boolean;
+}
 
 const baseStyles = {
   header: {
@@ -43,6 +47,10 @@ const baseStyles = {
     opacity: 0.8,
     transition: "opacity 0.2s",
     fontWeight: "500",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
   },
 
   userButton: {
@@ -94,7 +102,10 @@ const baseStyles = {
   },
 } as const;
 
-const Header: React.FC = () => {
+const Header: React.FC<HeaderProps> = ({
+  onToggleFavorites,
+  showFavorites,
+}) => {
   const { user, signOut } = useAuth();
   const [currentModal, setCurrentModal] = useState<"none" | "login" | "signup">(
     "none"
@@ -151,18 +162,35 @@ const Header: React.FC = () => {
     <>
       <header style={baseStyles.header}>
         <div style={baseStyles.logoContainer}>
-          <img
-            src="/Logo.jpeg"
-            alt="QuickBet Movies Logo"
-            style={baseStyles.logo}
-          />
+          <Link href="/">
+            <img
+              src="/Logo.jpeg"
+              alt="QuickBet Movies Logo"
+              style={baseStyles.logo}
+            />
+          </Link>
           <nav style={baseStyles.nav}>
-            <Link href="/" style={baseStyles.link}>
+            <Link
+              href="/"
+              style={{
+                ...baseStyles.link,
+                opacity: !showFavorites ? 1 : 0.8,
+                color: !showFavorites ? "#FBBF24" : "#ffffff",
+              }}
+            >
               Popular
             </Link>
-            <Link href="/favorites" style={baseStyles.link}>
+            {/* Continuación del Header */}
+            <button
+              onClick={onToggleFavorites}
+              style={{
+                ...baseStyles.link,
+                opacity: showFavorites ? 1 : 0.8,
+                color: showFavorites ? "#FBBF24" : "#ffffff",
+              }}
+            >
               Favorites
-            </Link>
+            </button>
           </nav>
         </div>
 

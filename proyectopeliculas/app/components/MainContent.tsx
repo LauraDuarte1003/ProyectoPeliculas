@@ -3,10 +3,19 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaHeart } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const API_KEY = "07ae841cba8689091077a34ea07ab14d";
 const BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+
+interface APIMovie {
+  id: number;
+  title: string;
+  release_date?: string;
+  poster_path?: string;
+  vote_average?: number;
+}
 
 interface Movie {
   id: number;
@@ -22,39 +31,71 @@ interface Category {
   movies: Movie[];
 }
 
-interface MainContentProps {
-  searchResults: any[];
+interface MovieResponse {
+  results: APIMovie[];
 }
 
-const MainContent: React.FC<MainContentProps> = ({ searchResults }) => {
+interface MainContentProps {
+  searchResults: APIMovie[] | undefined;
+  showFavorites: boolean;
+}
+
+const MainContent: React.FC<MainContentProps> = ({
+  searchResults,
+  showFavorites,
+}) => {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [formattedResults, setFormattedResults] = useState<Movie[]>([]);
+  const [favorites, setFavorites] = useState<Movie[]>([]);
 
-  const formatMovies = (movies: any[] = []): Movie[] => {
-    if (!Array.isArray(movies)) return [];
+  useEffect(() => {
+    try {
+      const savedFavorites = localStorage.getItem("movieFavorites");
+      if (savedFavorites) {
+        setFavorites(JSON.parse(savedFavorites));
+      }
+    } catch (error) {
+      console.error("Error loading favorites:", error);
+    }
+  }, []);
 
-    return movies.map((movie) => ({
-      id: movie.id,
-      title: movie.title || "",
-      releaseDate: movie.release_date?.split("-")[0] || "",
-      image: movie.poster_path
-        ? `${IMAGE_BASE_URL}${movie.poster_path}`
-        : "/placeholder.jpg",
-      rating: Math.round((movie.vote_average || 0) * 10),
-      favorites: false,
-    }));
-  };
+  const formatMovies = React.useCallback(
+    (movies: APIMovie[] = []): Movie[] => {
+      if (!Array.isArray(movies)) return [];
+      return movies.map((movie) => {
+        const releaseDate = movie.release_date
+          ? new Intl.DateTimeFormat("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            }).format(new Date(movie.release_date))
+          : "Unknown";
+
+        return {
+          id: movie.id,
+          title: movie.title || "",
+          releaseDate,
+          image: movie.poster_path
+            ? `${IMAGE_BASE_URL}${movie.poster_path}`
+            : "/placeholder.jpg",
+          rating: Math.round((movie.vote_average || 0) * 10),
+          favorites: favorites.some((fav) => fav.id === movie.id),
+        };
+      });
+    },
+    [favorites]
+  );
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const [popularResponse, nowPlayingResponse] = await Promise.all([
-          axios.get(
+          axios.get<MovieResponse>(
             `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=1`
           ),
-          axios.get(
+          axios.get<MovieResponse>(
             `${BASE_URL}/movie/now_playing?api_key=${API_KEY}&language=en-US&page=1`
           ),
         ]);
@@ -70,59 +111,58 @@ const MainContent: React.FC<MainContentProps> = ({ searchResults }) => {
           },
         ]);
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error(
+          "Error fetching categories:",
+          error instanceof Error ? error.message : error
+        );
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchCategories();
-  }, []);
+  }, [formatMovies]);
 
   useEffect(() => {
-    setFormattedResults(formatMovies(searchResults));
-  }, [searchResults]);
+    if (searchResults?.length) {
+      setFormattedResults(formatMovies(searchResults));
+    }
+  }, [searchResults, formatMovies]);
 
-  const toggleFavorite = (categoryIndex: number, movieId: number) => {
-    setCategories((prev) =>
-      prev.map((category, index) => {
-        if (index === categoryIndex) {
-          return {
-            ...category,
-            movies: category.movies.map((movie) =>
-              movie.id === movieId
-                ? { ...movie, favorites: !movie.favorites }
-                : movie
-            ),
-          };
-        }
-        return category;
-      })
-    );
-  };
+  const toggleFavorite = (movie: Movie) => {
+    setFavorites((prev) => {
+      const exists = prev.some((fav) => fav.id === movie.id);
+      const newFavorites = exists
+        ? prev.filter((fav) => fav.id !== movie.id)
+        : [...prev, { ...movie, favorites: true }];
 
-  const toggleSearchFavorite = (movieId: number) => {
-    setFormattedResults((prev) =>
-      prev.map((movie) =>
-        movie.id === movieId ? { ...movie, favorites: !movie.favorites } : movie
-      )
-    );
+      try {
+        localStorage.setItem("movieFavorites", JSON.stringify(newFavorites));
+      } catch (error) {
+        console.error("Error saving favorites:", error);
+      }
+      return newFavorites;
+    });
   };
 
   const getProgressColor = (rating: number) => {
     return rating <= 60 ? "#f44336" : "#4caf50";
   };
 
-  const renderMovieCard = (
-    movie: Movie,
-    isCategoryMovie: boolean = false,
-    categoryIndex: number = 0
-  ) => (
+  const movieRowStyle: React.CSSProperties = {
+    display: "flex",
+    overflowX: "auto",
+    gap: "0",
+    padding: "10px 0",
+    scrollBehavior: "smooth",
+    WebkitOverflowScrolling: "touch",
+  };
+
+  const renderMovieCard = (movie: Movie) => (
     <div
-      key={movie.id}
       style={{
         minWidth: "250px",
-        maxWidth: "200px",
+        maxWidth: "250px",
         backgroundColor: "#2c2c2c",
         borderRadius: "10px",
         overflow: "hidden",
@@ -130,63 +170,94 @@ const MainContent: React.FC<MainContentProps> = ({ searchResults }) => {
         flexDirection: "column",
         boxShadow: "0 4px 6px rgba(0, 0, 0, 0.2)",
         cursor: "pointer",
+        marginRight: "20px",
+        marginBottom: "10px",
       }}
       onClick={() => router.push(`/movie/${movie.id}`)}
     >
-      <div style={{ height: "300px", backgroundColor: "#333" }}>
-        <img
+      {/* La parte de la imagen se mantiene igual */}
+      <div
+        style={{
+          height: "300px",
+          backgroundColor: "#333",
+          position: "relative",
+        }}
+      >
+        <Image
           src={movie.image}
           alt={movie.title}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
+          fill
+          style={{ objectFit: "cover" }}
+          placeholder="blur"
+          blurDataURL="/placeholder.jpg"
           onError={(e) => {
-            e.currentTarget.src = "/placeholder.jpg";
+            const imgElement = e.target as HTMLImageElement;
+            imgElement.src = "/placeholder.jpg";
           }}
         />
       </div>
 
       <div
         style={{
-          padding: "15px 10px",
-          textAlign: "left",
-          flex: "1",
+          padding: "15px",
           backgroundColor: "#000",
+          height: "160px",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <h3
-          style={{
-            fontSize: "1.2em",
-            marginBottom: "10px",
-            fontWeight: "bold",
-            color: "white",
-          }}
-        >
-          {movie.title}
-        </h3>
-        <p style={{ fontSize: "0.9em", color: "#aaa" }}>{movie.releaseDate}</p>
+        <div style={{ flex: 1 }}>
+          <h3
+            style={{
+              fontSize: "1.1em",
+              fontWeight: "bold",
+              color: "white",
+              marginBottom: "8px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              lineHeight: "1.2em",
+              height: "2.4em",
+            }}
+          >
+            {movie.title}
+          </h3>
+          <p style={{ fontSize: "0.9em", color: "#aaa" }}>
+            {movie.releaseDate}
+          </p>
+        </div>
+
+        {/* Sección de Rating y Favorite modificada */}
         <div
           style={{
             display: "flex",
-            justifyContent: "space-around",
+            justifyContent: "center",
             alignItems: "center",
-            marginTop: "15px",
+            gap: "30px", // Espacio reducido entre Rating y Favorite
+            marginTop: "5px",
           }}
         >
-          <div style={{ position: "relative" }}>
-            <h3
+          {/* Rating */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <span
               style={{
-                fontSize: "0.8em",
-                marginBottom: "10px",
-                fontWeight: "bold",
+                fontSize: "0.75em",
                 color: "white",
+                marginTop: "2px",
+                marginBottom: "8px",
               }}
             >
               Rating
-            </h3>
-            <svg viewBox="0 0 36 36" style={{ width: "40px", height: "40px" }}>
+            </span>
+            <svg viewBox="0 0 36 36" style={{ width: "35px", height: "35px" }}>
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
@@ -197,7 +268,7 @@ const MainContent: React.FC<MainContentProps> = ({ searchResults }) => {
               <text
                 x="18"
                 y="20.35"
-                fontSize="7"
+                fontSize="8"
                 fill="white"
                 textAnchor="middle"
               >
@@ -205,34 +276,43 @@ const MainContent: React.FC<MainContentProps> = ({ searchResults }) => {
               </text>
             </svg>
           </div>
-          <div onClick={(e) => e.stopPropagation()}>
-            <h3
+
+          {/* Favorite */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <span
               style={{
-                fontSize: "0.8em",
-                marginBottom: "10px",
-                fontWeight: "bold",
+                fontSize: "0.75em",
                 color: "white",
-                textAlign: "center",
+                marginBottom: "13px",
               }}
             >
               Favorite
-            </h3>
+            </span>
             <button
-              onClick={() =>
-                isCategoryMovie
-                  ? toggleFavorite(categoryIndex, movie.id)
-                  : toggleSearchFavorite(movie.id)
-              }
+              onClick={() => toggleFavorite(movie)}
               style={{
                 background: "none",
                 border: "none",
-                color: movie.favorites ? "red" : "white",
+                color: favorites.some((fav) => fav.id === movie.id)
+                  ? "red"
+                  : "white",
                 fontSize: "1.5em",
                 cursor: "pointer",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
               aria-label="Toggle Favorite"
             >
-              <FaHeart />
+              <FaHeart size={28} />
             </button>
           </div>
         </div>
@@ -246,43 +326,66 @@ const MainContent: React.FC<MainContentProps> = ({ searchResults }) => {
     );
   }
 
+  if (showFavorites) {
+    return (
+      <div
+        style={{ backgroundColor: "#454545", color: "white", padding: "20px" }}
+      >
+        <h2
+          style={{ marginBottom: "20px", fontSize: "1.5em", color: "#FBBF24" }}
+        >
+          My Favorites
+        </h2>
+        {favorites.length > 0 ? (
+          <div style={movieRowStyle}>
+            {favorites.map((movie) => (
+              <div key={movie.id}>{renderMovieCard(movie)}</div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", color: "white" }}>
+            No favorite movies yet. Start adding some!
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={{ backgroundColor: "#454545", color: "white" }}>
       {formattedResults.length > 0 ? (
         <div style={{ marginBottom: "40px" }}>
-          <h2 style={{ marginBottom: "20px", fontSize: "1.5em" }}>
-            Search Results
-          </h2>
-          <div
+          <h2
             style={{
-              display: "flex",
-              overflowX: "auto",
-              gap: "20px",
-              padding: "10px 0",
-              scrollBehavior: "smooth",
+              marginBottom: "20px",
+              fontSize: "1.5em",
+              padding: "0 20px",
             }}
           >
-            {formattedResults.map((movie) => renderMovieCard(movie))}
+            Search Results
+          </h2>
+          <div style={movieRowStyle}>
+            {formattedResults.map((movie) => (
+              <div key={movie.id}>{renderMovieCard(movie)}</div>
+            ))}
           </div>
         </div>
       ) : (
-        categories.map((category, categoryIndex) => (
+        categories.map((category) => (
           <div key={category.name} style={{ marginBottom: "40px" }}>
-            <h2 style={{ marginBottom: "20px", fontSize: "1.5em" }}>
-              {category.name}
-            </h2>
-            <div
+            <h2
               style={{
-                display: "flex",
-                overflowX: "auto",
-                gap: "20px",
-                padding: "10px 0",
-                scrollBehavior: "smooth",
+                marginBottom: "20px",
+                fontSize: "1.5em",
+                padding: "0 20px",
               }}
             >
-              {category.movies.map((movie) =>
-                renderMovieCard(movie, true, categoryIndex)
-              )}
+              {category.name}
+            </h2>
+            <div style={movieRowStyle}>
+              {category.movies.map((movie) => (
+                <div key={movie.id}>{renderMovieCard(movie)}</div>
+              ))}
             </div>
           </div>
         ))
