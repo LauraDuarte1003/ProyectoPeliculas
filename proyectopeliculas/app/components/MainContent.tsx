@@ -5,7 +5,7 @@ import { FaHeart } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-const API_KEY = "07ae841cba8689091077a34ea07ab14d";
+const API_KEY = "68b79e4579985b0b418293b7b594d6e8";
 const BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
@@ -91,14 +91,29 @@ const MainContent: React.FC<MainContentProps> = ({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const [popularResponse, nowPlayingResponse] = await Promise.all([
-          axios.get<MovieResponse>(
-            `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=1`
-          ),
-          axios.get<MovieResponse>(
-            `${BASE_URL}/movie/now_playing?api_key=${API_KEY}&language=en-US&page=1`
-          ),
-        ]);
+        const [popularResponse, nowPlayingResponse, topRatedResponse] =
+          await Promise.all([
+            axios.get<MovieResponse>(
+              `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=1`
+            ),
+            axios.get<MovieResponse>(
+              `${BASE_URL}/movie/now_playing?api_key=${API_KEY}&language=en-US&page=1`
+            ),
+            axios.get<MovieResponse>(
+              `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=1`
+            ),
+          ]);
+
+        const allMovies = [
+          ...popularResponse.data.results,
+          ...nowPlayingResponse.data.results,
+          ...topRatedResponse.data.results,
+        ];
+        const formattedMovies = formatMovies(allMovies);
+
+        const topRatingMovies = formattedMovies.filter(
+          (movie) => movie.rating > 80
+        );
 
         setCategories([
           {
@@ -108,6 +123,14 @@ const MainContent: React.FC<MainContentProps> = ({
           {
             name: "Now Playing",
             movies: formatMovies(nowPlayingResponse.data.results),
+          },
+          {
+            name: "Top Rating",
+            movies: topRatingMovies,
+          },
+          {
+            name: "Favorites",
+            movies: favorites,
           },
         ]);
       } catch (error) {
@@ -121,7 +144,7 @@ const MainContent: React.FC<MainContentProps> = ({
     };
 
     fetchCategories();
-  }, [formatMovies]);
+  }, [formatMovies, favorites]);
 
   useEffect(() => {
     if (searchResults?.length) {
@@ -175,7 +198,6 @@ const MainContent: React.FC<MainContentProps> = ({
       }}
       onClick={() => router.push(`/movie/${movie.id}`)}
     >
-      {/* La parte de la imagen se mantiene igual */}
       <div
         style={{
           height: "300px",
@@ -229,17 +251,15 @@ const MainContent: React.FC<MainContentProps> = ({
           </p>
         </div>
 
-        {/* Sección de Rating y Favorite modificada */}
         <div
           style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            gap: "30px", // Espacio reducido entre Rating y Favorite
+            gap: "30px",
             marginTop: "5px",
           }}
         >
-          {/* Rating */}
           <div
             style={{
               display: "flex",

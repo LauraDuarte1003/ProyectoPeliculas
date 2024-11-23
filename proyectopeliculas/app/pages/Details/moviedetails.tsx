@@ -3,10 +3,16 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaHeart, FaArrowLeft } from "react-icons/fa";
 import { LuPlay } from "react-icons/lu";
+import Image from "next/image";
 
-const API_KEY = "07ae841cba8689091077a34ea07ab14d";
+const API_KEY = "68b79e4579985b0b418293b7b594d6e8";
 const BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
+
+interface Genre {
+  id: number;
+  name: string;
+}
 
 interface MovieDetails {
   id: number;
@@ -17,7 +23,33 @@ interface MovieDetails {
   backdrop_path: string;
   vote_average: number;
   runtime: number;
-  genres: Array<{ id: number; name: string }>;
+  genres: Genre[];
+}
+
+interface MovieRecommendation {
+  id: number;
+  title: string;
+  poster_path: string;
+}
+
+interface Video {
+  id: string;
+  key: string;
+  type: string;
+  official: boolean;
+}
+
+interface ApiResponse<T> {
+  results: T[];
+}
+
+interface FavoriteMovie {
+  id: number;
+  title: string;
+  releaseDate: string;
+  image: string;
+  rating: number;
+  favorites: boolean;
 }
 
 interface MovieDetailsProps {
@@ -27,26 +59,63 @@ interface MovieDetailsProps {
 
 const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
   const [movie, setMovie] = useState<MovieDetails | null>(null);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<MovieRecommendation[]>(
+    []
+  );
   const [trailer, setTrailer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const movieCategories = [
-    "Aviation",
-    "Fighter Jets",
-    "Military",
-    "Action",
-    "Sequel",
-    "Friendship",
-    "Legacy",
-    "Mentorship",
-    "Aerial Combat",
-    "Naval Aviation",
-  ];
+  useEffect(() => {
+    const checkIfFavorite = () => {
+      try {
+        const savedFavorites = localStorage.getItem("movieFavorites");
+        if (savedFavorites) {
+          const favorites: FavoriteMovie[] = JSON.parse(savedFavorites);
+          setIsFavorite(favorites.some((fav) => fav.id === movieId));
+        }
+      } catch (error) {
+        console.error("Error checking favorites:", error);
+      }
+    };
 
-  const getProgressColor = (rating: number) => {
-    return rating <= 60 ? "#f44336" : "#4caf50";
+    checkIfFavorite();
+  }, [movieId]);
+
+  const toggleFavorite = () => {
+    if (!movie) return;
+
+    try {
+      const savedFavorites = localStorage.getItem("movieFavorites");
+      let favorites: FavoriteMovie[] = savedFavorites
+        ? JSON.parse(savedFavorites)
+        : [];
+
+      if (isFavorite) {
+        favorites = favorites.filter((fav) => fav.id !== movieId);
+      } else {
+        const newFavorite: FavoriteMovie = {
+          id: movieId,
+          title: movie.title,
+          releaseDate: new Intl.DateTimeFormat("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          }).format(new Date(movie.release_date)),
+          image: movie.poster_path
+            ? `${IMAGE_BASE_URL}${movie.poster_path}`
+            : "/placeholder.jpg",
+          rating: Math.round(movie.vote_average * 10),
+          favorites: true,
+        };
+        favorites.push(newFavorite);
+      }
+
+      localStorage.setItem("movieFavorites", JSON.stringify(favorites));
+      setIsFavorite(!isFavorite);
+    } catch (error) {
+      console.error("Error updating favorites:", error);
+    }
   };
 
   useEffect(() => {
@@ -54,13 +123,13 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
       try {
         const [movieResponse, recommendationsResponse, videosResponse] =
           await Promise.all([
-            axios.get(
+            axios.get<MovieDetails>(
               `${BASE_URL}/movie/${movieId}?api_key=${API_KEY}&language=en-US`
             ),
-            axios.get(
+            axios.get<ApiResponse<MovieRecommendation>>(
               `${BASE_URL}/movie/${movieId}/recommendations?api_key=${API_KEY}&language=en-US&page=1`
             ),
-            axios.get(
+            axios.get<ApiResponse<Video>>(
               `${BASE_URL}/movie/${movieId}/videos?api_key=${API_KEY}&language=en-US`
             ),
           ]);
@@ -69,7 +138,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
         setRecommendations(recommendationsResponse.data.results.slice(0, 6));
 
         const officialTrailer = videosResponse.data.results.find(
-          (video: any) =>
+          (video) =>
             (video.type === "Trailer" && video.official) ||
             video.type === "Trailer"
         );
@@ -87,6 +156,10 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
 
     fetchMovieDetails();
   }, [movieId]);
+
+  const getProgressColor = (rating: number): string => {
+    return rating <= 60 ? "#f44336" : "#4caf50";
+  };
 
   if (isLoading || !movie) {
     return (
@@ -132,18 +205,8 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
           }}
         />
 
-        <div
-          style={{
-            position: "relative",
-            zIndex: 2,
-          }}
-        >
-          <div
-            style={{
-              padding: "20px 40px",
-              paddingBottom: "0",
-            }}
-          >
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <div style={{ padding: "20px 40px", paddingBottom: "0" }}>
             <button
               onClick={onBack}
               style={{
@@ -168,23 +231,32 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
               gap: "40px",
             }}
           >
+            {/* Poster Section */}
             <div>
-              <img
-                src={`${IMAGE_BASE_URL}${movie.poster_path}`}
-                alt={movie.title}
+              <div
                 style={{
+                  position: "relative",
                   width: "100%",
+                  height: "450px",
                   marginBottom: "20px",
                 }}
-              />
+              >
+                <Image
+                  src={`${IMAGE_BASE_URL}${movie.poster_path}`}
+                  alt={movie.title}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  sizes="(max-width: 300px) 100vw, 300px"
+                />
+              </div>
               {trailer && (
                 <button
-                  onClick={() =>
+                  onClick={() => {
                     window.open(
                       `https://www.youtube.com/watch?v=${trailer}`,
                       "_blank"
-                    )
-                  }
+                    );
+                  }}
                   style={{
                     width: "100%",
                     padding: "15px",
@@ -206,6 +278,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
               )}
             </div>
 
+            {/* Info Section */}
             <div>
               <h1
                 style={{
@@ -218,11 +291,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
               </h1>
 
               <div
-                style={{
-                  display: "flex",
-                  gap: "250px",
-                  marginBottom: "30px",
-                }}
+                style={{ display: "flex", gap: "250px", marginBottom: "30px" }}
               >
                 <span style={{ color: "#ccc" }}>
                   {new Date(movie.release_date).toLocaleDateString()}
@@ -267,9 +336,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                     style={{ width: "80px", height: "80px" }}
                   >
                     <path
-                      d="M18 2.0845
-                          a 15.9155 15.9155 0 0 1 0 31.831
-                          a 15.9155 15.9155 0 0 1 0 -31.831"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       fill="none"
                       stroke={getProgressColor(ratingPercentage)}
                       strokeWidth="2"
@@ -288,7 +355,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                 </div>
 
                 <button
-                  onClick={() => setIsFavorite(!isFavorite)}
+                  onClick={toggleFavorite}
                   style={{
                     background: "none",
                     border: "none",
@@ -309,9 +376,9 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                   marginTop: "20px",
                 }}
               >
-                {movieCategories.map((category, index) => (
+                {movie.genres.map((genre) => (
                   <span
-                    key={index}
+                    key={genre.id}
                     style={{
                       padding: "5px 15px",
                       borderRadius: "1px",
@@ -320,7 +387,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                       fontSize: "0.9em",
                     }}
                   >
-                    {category}
+                    {genre.name}
                   </span>
                 ))}
               </div>
@@ -329,6 +396,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
         </div>
       </div>
 
+      {/* Recommendations section */}
       {recommendations.length > 0 && (
         <div style={{ padding: "40px" }}>
           <h2
@@ -347,13 +415,18 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
               gap: "20px",
             }}
           >
-            {recommendations.map((movie) => (
+            {recommendations.map((rec) => (
               <div
-                key={movie.id}
-                onClick={() => (window.location.href = `/movie/${movie.id}`)}
+                key={rec.id}
+                onClick={() => {
+                  window.location.href = `/movie/${rec.id}`;
+                }}
                 style={{
                   cursor: "pointer",
                   transition: "transform 0.2s",
+                  position: "relative",
+                  width: "100%",
+                  height: "270px",
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = "scale(1.05)";
@@ -362,15 +435,15 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                   e.currentTarget.style.transform = "scale(1)";
                 }}
               >
-                <img
-                  src={`${IMAGE_BASE_URL}${movie.poster_path}`}
-                  alt={movie.title}
+                <Image
+                  src={`${IMAGE_BASE_URL}${rec.poster_path}`}
+                  alt={rec.title}
+                  fill
                   style={{
-                    width: "100%",
-                    borderRadius: "8px",
-                    aspectRatio: "2/3",
                     objectFit: "cover",
+                    borderRadius: "8px",
                   }}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
               </div>
             ))}

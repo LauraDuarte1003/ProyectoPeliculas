@@ -1,12 +1,23 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import { CircleArrowLeft, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
+
+// Crear el cliente de Supabase directamente
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface SignUpProps {
   onClose: () => void;
   onSwitchToLogin: () => void;
+}
+
+interface AuthError {
+  message: string;
 }
 
 const SignUpComponent: React.FC<SignUpProps> = ({
@@ -38,7 +49,7 @@ const SignUpComponent: React.FC<SignUpProps> = ({
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -50,8 +61,9 @@ const SignUpComponent: React.FC<SignUpProps> = ({
 
       alert("Check your email for the confirmation link!");
       onClose();
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error) {
+      const authError = error as AuthError;
+      setError(authError.message);
     } finally {
       setLoading(false);
     }
@@ -180,12 +192,11 @@ const SignUpComponent: React.FC<SignUpProps> = ({
       padding: isMobile ? "0 20px" : "0",
     },
 
-    welcomeText: {
-      color: "white",
-      fontSize: "12px",
-      marginBottom: "10px",
-      textAlign: "center" as const,
-      marginTop: "20px",
+    inputContainer: {
+      position: "relative" as const,
+      width: "100%",
+      display: "flex",
+      justifyContent: "center",
     },
 
     input: {
@@ -196,13 +207,6 @@ const SignUpComponent: React.FC<SignUpProps> = ({
       borderRadius: "8px 8px 0 0",
       fontSize: "12px",
       color: "black",
-    },
-
-    inputContainer: {
-      position: "relative" as const,
-      width: "100%",
-      display: "flex",
-      justifyContent: "center",
     },
 
     passwordToggle: {
@@ -261,15 +265,18 @@ const SignUpComponent: React.FC<SignUpProps> = ({
       marginBottom: isMobile ? "0" : "80px",
     },
 
-    avatarImage: {
+    errorText: {
+      color: "red",
+      textAlign: "center" as const,
+      marginBottom: "10px",
+      fontSize: "12px",
+    },
+
+    avatarContainer: {
+      position: "relative" as const,
       width: isMobile ? "280px" : "380px",
       height: isMobile ? "280px" : "380px",
-      objectFit: "contain" as const,
-      position: "absolute" as const,
-      bottom: "-10px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      marginBottom: "0",
+      marginTop: "auto",
     },
   };
 
@@ -309,17 +316,7 @@ const SignUpComponent: React.FC<SignUpProps> = ({
               </div>
             ) : (
               <form onSubmit={handleSignUp} style={styles.formContainer}>
-                {error && (
-                  <div
-                    style={{
-                      color: "red",
-                      textAlign: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    {error}
-                  </div>
-                )}
+                {error && <div style={styles.errorText}>{error}</div>}
 
                 <div style={styles.inputContainer}>
                   <input
@@ -378,11 +375,14 @@ const SignUpComponent: React.FC<SignUpProps> = ({
               </p>
             </div>
 
-            <img
-              src="./signup.png"
-              alt="3D Avatar"
-              style={styles.avatarImage}
-            />
+            <div style={styles.avatarContainer}>
+              <Image
+                src="/signup.png"
+                alt="3D Avatar"
+                fill
+                style={{ objectFit: "contain" }}
+              />
+            </div>
           </div>
         </div>
       </div>

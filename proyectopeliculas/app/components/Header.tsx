@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { CircleUserRound } from "lucide-react";
 import SignUpModal from "../pages/auth/login";
 import SignUpComponent from "../pages/auth/signup";
@@ -11,7 +12,8 @@ interface HeaderProps {
   showFavorites: boolean;
 }
 
-const baseStyles = {
+// Separamos los estilos en un objeto fuera del componente
+const styles = {
   header: {
     width: "100%",
     background: "#000000",
@@ -23,23 +25,18 @@ const baseStyles = {
     position: "relative" as const,
     zIndex: 1,
   },
-
   logoContainer: {
     display: "flex",
     alignItems: "center",
     gap: "32px",
+    position: "relative",
+    height: "50px", // Altura fija para el contenedor del logo
+    width: "auto",
   },
-
-  logo: {
-    height: "50px",
-    objectFit: "contain" as const,
-  },
-
   nav: {
     display: "flex",
     gap: "32px",
   },
-
   link: {
     color: "#ffffff",
     textDecoration: "none",
@@ -52,7 +49,6 @@ const baseStyles = {
     cursor: "pointer",
     padding: 0,
   },
-
   userButton: {
     background: "none",
     border: "2px solid white",
@@ -67,7 +63,6 @@ const baseStyles = {
     height: "40px",
     transition: "all 0.2s",
   },
-
   dropdownMenu: {
     position: "absolute" as const,
     top: "100%",
@@ -80,7 +75,6 @@ const baseStyles = {
     minWidth: "150px",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
   },
-
   menuItem: {
     display: "block",
     width: "100%",
@@ -93,7 +87,6 @@ const baseStyles = {
     cursor: "pointer",
     transition: "background-color 0.2s",
   },
-
   menuEmail: {
     padding: "8px 16px",
     color: "#999",
@@ -130,21 +123,10 @@ const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleCloseModal = () => {
-    setCurrentModal("none");
-  };
-
-  const handleSwitchToSignUp = () => {
-    setCurrentModal("signup");
-  };
-
-  const handleSwitchToLogin = () => {
-    setCurrentModal("login");
-  };
-
-  const handleButtonClick = () => {
-    setShowMenu(!showMenu);
-  };
+  const handleCloseModal = () => setCurrentModal("none");
+  const handleSwitchToSignUp = () => setCurrentModal("signup");
+  const handleSwitchToLogin = () => setCurrentModal("login");
+  const handleButtonClick = () => setShowMenu(!showMenu);
 
   const handleLogin = () => {
     setShowMenu(false);
@@ -160,31 +142,38 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header style={baseStyles.header}>
-        <div style={baseStyles.logoContainer}>
+      <header style={styles.header}>
+        <div style={styles.logoContainer}>
           <Link href="/">
-            <img
-              src="/Logo.jpeg"
-              alt="QuickBet Movies Logo"
-              style={baseStyles.logo}
-            />
+            <div
+              style={{ position: "relative", width: "150px", height: "50px" }}
+            >
+              <Image
+                src="/Logo.jpeg"
+                alt="QuickBet Movies Logo"
+                fill
+                sizes="150px"
+                style={{ objectFit: "contain" }}
+                priority
+              />
+            </div>
           </Link>
-          <nav style={baseStyles.nav}>
+
+          <nav style={styles.nav}>
             <Link
               href="/"
               style={{
-                ...baseStyles.link,
+                ...styles.link,
                 opacity: !showFavorites ? 1 : 0.8,
                 color: !showFavorites ? "#FBBF24" : "#ffffff",
               }}
             >
               Popular
             </Link>
-            {/* Continuación del Header */}
             <button
               onClick={onToggleFavorites}
               style={{
-                ...baseStyles.link,
+                ...styles.link,
                 opacity: showFavorites ? 1 : 0.8,
                 color: showFavorites ? "#FBBF24" : "#ffffff",
               }}
@@ -199,7 +188,7 @@ const Header: React.FC<HeaderProps> = ({
             ref={buttonRef}
             onClick={handleButtonClick}
             style={{
-              ...baseStyles.userButton,
+              ...styles.userButton,
               borderColor: user ? "#FBBF24" : "white",
               color: user ? "#FBBF24" : "white",
             }}
@@ -208,14 +197,14 @@ const Header: React.FC<HeaderProps> = ({
           </button>
 
           {showMenu && (
-            <div ref={menuRef} style={baseStyles.dropdownMenu}>
+            <div ref={menuRef} style={styles.dropdownMenu}>
               {user ? (
                 <>
-                  <div style={baseStyles.menuEmail}>{user.email}</div>
+                  <div style={styles.menuEmail}>{user.email}</div>
                   <button
                     onClick={handleLogout}
                     style={{
-                      ...baseStyles.menuItem,
+                      ...styles.menuItem,
                       color: "#ff4444",
                     }}
                     onMouseOver={(e) => {
@@ -232,7 +221,7 @@ const Header: React.FC<HeaderProps> = ({
               ) : (
                 <button
                   onClick={handleLogin}
-                  style={baseStyles.menuItem}
+                  style={styles.menuItem}
                   onMouseOver={(e) => {
                     e.currentTarget.style.backgroundColor =
                       "rgba(255, 255, 255, 0.1)";

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, CSSProperties } from "react";
 import axios from "axios";
 
-const API_KEY = "07ae841cba8689091077a34ea07ab14d";
+const API_KEY = "68b79e4579985b0b418293b7b594d6e8";
 const BASE_URL = "https://api.themoviedb.org/3";
 
 interface Genre {
@@ -10,8 +10,25 @@ interface Genre {
   name: string;
 }
 
+interface MovieResult {
+  id: number;
+  title: string;
+  release_date?: string;
+  poster_path?: string;
+  vote_average?: number;
+  overview: string;
+}
+
 interface SearchProps {
-  onSearchResults: (movies: any[]) => void;
+  onSearchResults: (movies: MovieResult[]) => void;
+}
+
+interface GenreResponse {
+  genres: Genre[];
+}
+
+interface MovieResponse {
+  results: MovieResult[];
 }
 
 const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
@@ -23,7 +40,7 @@ const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const response = await axios.get(
+        const response = await axios.get<GenreResponse>(
           `${BASE_URL}/genre/movie/list?api_key=${API_KEY}&language=en-US`
         );
         setGenres(response.data.genres);
@@ -52,7 +69,7 @@ const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
         onSearchResults([]);
         return;
       }
-      const response = await axios.get(
+      const response = await axios.get<MovieResponse>(
         `${BASE_URL}/search/movie?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(
           query
         )}&page=1`
@@ -67,22 +84,24 @@ const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    const debounceTimeout = setTimeout(() => searchMovies(query), 500);
-    return () => clearTimeout(debounceTimeout);
+    setSelectedGenre("All Genres");
+    const timeoutId = setTimeout(() => searchMovies(query), 500);
+    return () => clearTimeout(timeoutId);
   };
 
   const handleGenreSelect = async (genreId: number, genreName: string) => {
     try {
       setSelectedGenre(genreName);
       setIsGenresOpen(false);
+      setSearchQuery("");
 
       if (genreId === 0) {
         onSearchResults([]);
         return;
       }
 
-      const response = await axios.get(
-        `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=${genreId}&page=1`
+      const response = await axios.get<MovieResponse>(
+        `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=${genreId}&page=1&sort_by=popularity.desc`
       );
       onSearchResults(response.data.results);
     } catch (error) {
