@@ -231,7 +231,6 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
               gap: "40px",
             }}
           >
-            {/* Poster Section */}
             <div>
               <div
                 style={{
@@ -278,7 +277,6 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
               )}
             </div>
 
-            {/* Info Section */}
             <div>
               <h1
                 style={{
@@ -396,7 +394,6 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
         </div>
       </div>
 
-      {/* Recommendations section */}
       {recommendations.length > 0 && (
         <div style={{ padding: "40px" }}>
           <h2

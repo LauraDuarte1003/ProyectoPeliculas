@@ -297,7 +297,6 @@ const MainContent: React.FC<MainContentProps> = ({
             </svg>
           </div>
 
-          {/* Favorite */}
           <div
             onClick={(e) => e.stopPropagation()}
             style={{

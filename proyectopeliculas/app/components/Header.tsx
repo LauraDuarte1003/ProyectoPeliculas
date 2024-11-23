@@ -12,7 +12,6 @@ interface HeaderProps {
   showFavorites: boolean;
 }
 
-// Separamos los estilos en un objeto fuera del componente
 const styles = {
   header: {
     width: "100%",
@@ -30,7 +29,7 @@ const styles = {
     alignItems: "center",
     gap: "32px",
     position: "relative",
-    height: "50px", // Altura fija para el contenedor del logo
+    height: "50px",
     width: "auto",
   },
   nav: {

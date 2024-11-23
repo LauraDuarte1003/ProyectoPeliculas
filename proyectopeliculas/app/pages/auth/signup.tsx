@@ -5,7 +5,6 @@ import { createClient } from "@supabase/supabase-js";
 import { CircleArrowLeft, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 
-// Crear el cliente de Supabase directamente
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
