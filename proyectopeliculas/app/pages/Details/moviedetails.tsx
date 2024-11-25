@@ -65,6 +65,21 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
   const [trailer, setTrailer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+  const isTablet = windowWidth > 768 && windowWidth <= 1024;
 
   useEffect(() => {
     const checkIfFavorite = () => {
@@ -180,33 +195,79 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
 
   const ratingPercentage = Math.round(movie.vote_average * 10);
 
+  const styles = {
+    container: {
+      backgroundColor: "#1a1a1a",
+      minHeight: "100vh",
+    },
+    contentWrapper: {
+      position: "relative" as const,
+      color: "white",
+      minHeight: "90vh",
+      paddingBottom: "40px",
+    },
+    backdrop: {
+      position: "absolute" as const,
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      backgroundImage: `url(${IMAGE_BASE_URL}${movie.backdrop_path})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      opacity: "0.3",
+      zIndex: 1,
+    },
+    contentGrid: {
+      padding: isMobile ? "10px 20px" : "20px 40px",
+      display: "grid",
+      gridTemplateColumns: isMobile
+        ? "1fr"
+        : isTablet
+        ? "250px 1fr"
+        : "300px 1fr",
+      gap: isMobile ? "20px" : "40px",
+    },
+    posterContainer: {
+      position: "relative" as const,
+      width: "100%",
+      height: isMobile ? "300px" : "450px",
+      marginBottom: "20px",
+    },
+    movieInfo: {
+      display: "flex",
+      flexDirection: isMobile ? ("column" as const) : ("row" as const),
+      gap: isMobile ? "10px" : "250px",
+      marginBottom: "30px",
+    },
+    ratingSection: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: isMobile ? "center" : "flex-start",
+      gap: isMobile ? "40px" : "800px",
+      margin: "40px 0",
+    },
+    genresContainer: {
+      display: "flex",
+      flexWrap: "wrap" as const,
+      gap: "10px",
+      marginTop: "20px",
+      justifyContent: isMobile ? "center" : "flex-start",
+    },
+  };
+
   return (
-    <div style={{ backgroundColor: "#1a1a1a", minHeight: "100vh" }}>
-      <div
-        style={{
-          position: "relative",
-          color: "white",
-          minHeight: "90vh",
-          paddingBottom: "40px",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundImage: `url(${IMAGE_BASE_URL}${movie.backdrop_path})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: "0.3",
-            zIndex: 1,
-          }}
-        />
+    <div style={styles.container}>
+      <div style={styles.contentWrapper}>
+        <div style={styles.backdrop} />
 
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ padding: "20px 40px", paddingBottom: "0" }}>
+          <div
+            style={{
+              padding: isMobile ? "10px 20px" : "20px 40px",
+              paddingBottom: 0,
+            }}
+          >
             <button
               onClick={onBack}
               style={{
@@ -223,39 +284,25 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
             </button>
           </div>
 
-          <div
-            style={{
-              padding: "20px 40px",
-              display: "grid",
-              gridTemplateColumns: "300px 1fr",
-              gap: "40px",
-            }}
-          >
+          <div style={styles.contentGrid}>
             <div>
-              <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  height: "450px",
-                  marginBottom: "20px",
-                }}
-              >
+              <div style={styles.posterContainer}>
                 <Image
                   src={`${IMAGE_BASE_URL}${movie.poster_path}`}
                   alt={movie.title}
                   fill
                   style={{ objectFit: "cover" }}
-                  sizes="(max-width: 300px) 100vw, 300px"
+                  sizes={isMobile ? "100vw" : isTablet ? "250px" : "300px"}
                 />
               </div>
               {trailer && (
                 <button
-                  onClick={() => {
+                  onClick={() =>
                     window.open(
                       `https://www.youtube.com/watch?v=${trailer}`,
                       "_blank"
-                    );
-                  }}
+                    )
+                  }
                   style={{
                     width: "100%",
                     padding: "15px",
@@ -277,10 +324,10 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
               )}
             </div>
 
-            <div>
+            <div style={{ textAlign: isMobile ? "center" : "left" }}>
               <h1
                 style={{
-                  fontSize: "2.5em",
+                  fontSize: isMobile ? "1.8em" : "2.5em",
                   marginBottom: "20px",
                   fontWeight: "bold",
                 }}
@@ -288,9 +335,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                 {movie.title}
               </h1>
 
-              <div
-                style={{ display: "flex", gap: "250px", marginBottom: "30px" }}
-              >
+              <div style={styles.movieInfo}>
                 <span style={{ color: "#ccc" }}>
                   {new Date(movie.release_date).toLocaleDateString()}
                 </span>
@@ -303,7 +348,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                 <h3
                   style={{
                     marginBottom: "10px",
-                    fontSize: "2.0em",
+                    fontSize: isMobile ? "1.5em" : "2.0em",
                     fontWeight: "bold",
                   }}
                 >
@@ -313,21 +358,14 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                   style={{
                     lineHeight: "1.6",
                     fontSize: "1.1em",
-                    maxWidth: "800px",
+                    maxWidth: isMobile ? "100%" : "800px",
                   }}
                 >
                   {movie.overview}
                 </p>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "800px",
-                  margin: "40px 0",
-                }}
-              >
+              <div style={styles.ratingSection}>
                 <div style={{ position: "relative" }}>
                   <svg
                     viewBox="0 0 36 36"
@@ -366,14 +404,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                 </button>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "10px",
-                  marginTop: "20px",
-                }}
-              >
+              <div style={styles.genresContainer}>
                 {movie.genres.map((genre) => (
                   <span
                     key={genre.id}
@@ -395,12 +426,13 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
       </div>
 
       {recommendations.length > 0 && (
-        <div style={{ padding: "40px" }}>
+        <div style={{ padding: isMobile ? "20px" : "40px" }}>
           <h2
             style={{
               fontSize: "1.5em",
               marginBottom: "20px",
               color: "white",
+              textAlign: isMobile ? "center" : "left",
             }}
           >
             Recommendations
@@ -408,7 +440,9 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+              gridTemplateColumns: `repeat(auto-fill, minmax(${
+                isMobile ? "140px" : "180px"
+              }, 1fr))`,
               gap: "20px",
             }}
           >
@@ -423,7 +457,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                   transition: "transform 0.2s",
                   position: "relative",
                   width: "100%",
-                  height: "270px",
+                  height: isMobile ? "210px" : "270px",
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = "scale(1.05)";
@@ -440,7 +474,7 @@ const MovieDetailsView: React.FC<MovieDetailsProps> = ({ movieId, onBack }) => {
                     objectFit: "cover",
                     borderRadius: "8px",
                   }}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  sizes={isMobile ? "140px" : "180px"}
                 />
               </div>
             ))}

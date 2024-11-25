@@ -49,6 +49,17 @@ const MainContent: React.FC<MainContentProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [formattedResults, setFormattedResults] = useState<Movie[]>([]);
   const [favorites, setFavorites] = useState<Movie[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     try {
@@ -172,35 +183,70 @@ const MainContent: React.FC<MainContentProps> = ({
     return rating <= 60 ? "#f44336" : "#4caf50";
   };
 
+  const containerStyle: React.CSSProperties = {
+    backgroundColor: "#454545",
+    color: "white",
+    width: "100%",
+    maxWidth: "100%",
+    overflowX: "hidden",
+    padding: isMobile ? "10px" : "20px",
+  };
+
   const movieRowStyle: React.CSSProperties = {
     display: "flex",
     overflowX: "auto",
-    gap: "0",
-    padding: "10px 0",
+    padding: isMobile ? "10px 0" : "10px 20px",
     scrollBehavior: "smooth",
     WebkitOverflowScrolling: "touch",
+    width: "100%",
+    msOverflowStyle: "none",
+    scrollbarWidth: "none",
+    gap: isMobile ? "12px" : "20px",
+  };
+
+  const categoryTitleStyle: React.CSSProperties = {
+    fontSize: isMobile ? "1.3em" : "1.5em",
+    fontWeight: "600",
+    color: "#FBBF24",
+    padding: isMobile ? "15px 10px 5px" : "20px 20px 0",
+    letterSpacing: "0.5px",
   };
 
   const renderMovieCard = (movie: Movie) => (
     <div
       style={{
-        minWidth: "250px",
-        maxWidth: "250px",
+        minWidth: isMobile ? "160px" : "250px",
+        maxWidth: isMobile ? "160px" : "250px",
         backgroundColor: "#2c2c2c",
-        borderRadius: "10px",
+        borderRadius: isMobile ? "8px" : "10px",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         boxShadow: "0 4px 6px rgba(0, 0, 0, 0.2)",
         cursor: "pointer",
-        marginRight: "20px",
-        marginBottom: "10px",
+        marginBottom: isMobile ? "8px" : "10px",
+        flex: "0 0 auto",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
       }}
       onClick={() => router.push(`/movie/${movie.id}`)}
+      onMouseEnter={(e) => {
+        if (!isMobile) {
+          const target = e.currentTarget as HTMLDivElement;
+          target.style.transform = "translateY(-5px)";
+          target.style.boxShadow = "0 6px 12px rgba(0, 0, 0, 0.3)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isMobile) {
+          const target = e.currentTarget as HTMLDivElement;
+          target.style.transform = "translateY(0)";
+          target.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.2)";
+        }
+      }}
     >
       <div
         style={{
-          height: "300px",
+          height: isMobile ? "220px" : "300px",
           backgroundColor: "#333",
           position: "relative",
         }}
@@ -209,7 +255,10 @@ const MainContent: React.FC<MainContentProps> = ({
           src={movie.image}
           alt={movie.title}
           fill
-          style={{ objectFit: "cover" }}
+          style={{
+            objectFit: "cover",
+            transition: "transform 0.3s ease",
+          }}
           placeholder="blur"
           blurDataURL="/placeholder.jpg"
           onError={(e) => {
@@ -221,9 +270,9 @@ const MainContent: React.FC<MainContentProps> = ({
 
       <div
         style={{
-          padding: "15px",
+          padding: isMobile ? "12px" : "15px",
           backgroundColor: "#000",
-          height: "160px",
+          height: isMobile ? "140px" : "160px",
           display: "flex",
           flexDirection: "column",
         }}
@@ -231,10 +280,10 @@ const MainContent: React.FC<MainContentProps> = ({
         <div style={{ flex: 1 }}>
           <h3
             style={{
-              fontSize: "1.1em",
+              fontSize: isMobile ? "0.9em" : "1.1em",
               fontWeight: "bold",
               color: "white",
-              marginBottom: "8px",
+              marginBottom: isMobile ? "6px" : "8px",
               overflow: "hidden",
               textOverflow: "ellipsis",
               display: "-webkit-box",
@@ -246,7 +295,13 @@ const MainContent: React.FC<MainContentProps> = ({
           >
             {movie.title}
           </h3>
-          <p style={{ fontSize: "0.9em", color: "#aaa" }}>
+          <p
+            style={{
+              fontSize: isMobile ? "0.8em" : "0.9em",
+              color: "#aaa",
+              marginBottom: isMobile ? "8px" : "10px",
+            }}
+          >
             {movie.releaseDate}
           </p>
         </div>
@@ -254,10 +309,9 @@ const MainContent: React.FC<MainContentProps> = ({
         <div
           style={{
             display: "flex",
-            justifyContent: "center",
+            justifyContent: "space-between",
             alignItems: "center",
-            gap: "30px",
-            marginTop: "5px",
+            padding: isMobile ? "0 10px" : "0 15px",
           }}
         >
           <div
@@ -269,15 +323,20 @@ const MainContent: React.FC<MainContentProps> = ({
           >
             <span
               style={{
-                fontSize: "0.75em",
+                fontSize: isMobile ? "0.7em" : "0.75em",
                 color: "white",
-                marginTop: "2px",
-                marginBottom: "8px",
+                marginBottom: isMobile ? "5px" : "8px",
               }}
             >
               Rating
             </span>
-            <svg viewBox="0 0 36 36" style={{ width: "35px", height: "35px" }}>
+            <svg
+              viewBox="0 0 36 36"
+              style={{
+                width: isMobile ? "30px" : "35px",
+                height: isMobile ? "30px" : "35px",
+              }}
+            >
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
@@ -288,7 +347,7 @@ const MainContent: React.FC<MainContentProps> = ({
               <text
                 x="18"
                 y="20.35"
-                fontSize="8"
+                fontSize={isMobile ? "7" : "8"}
                 fill="white"
                 textAnchor="middle"
               >
@@ -307,9 +366,9 @@ const MainContent: React.FC<MainContentProps> = ({
           >
             <span
               style={{
-                fontSize: "0.75em",
+                fontSize: isMobile ? "0.7em" : "0.75em",
                 color: "white",
-                marginBottom: "13px",
+                marginBottom: isMobile ? "10px" : "13px",
               }}
             >
               Favorite
@@ -322,7 +381,7 @@ const MainContent: React.FC<MainContentProps> = ({
                 color: favorites.some((fav) => fav.id === movie.id)
                   ? "red"
                   : "white",
-                fontSize: "1.5em",
+                fontSize: isMobile ? "1.3em" : "1.5em",
                 cursor: "pointer",
                 padding: 0,
                 display: "flex",
@@ -331,7 +390,7 @@ const MainContent: React.FC<MainContentProps> = ({
               }}
               aria-label="Toggle Favorite"
             >
-              <FaHeart size={28} />
+              <FaHeart size={isMobile ? 24 : 28} />
             </button>
           </div>
         </div>
@@ -347,14 +406,8 @@ const MainContent: React.FC<MainContentProps> = ({
 
   if (showFavorites) {
     return (
-      <div
-        style={{ backgroundColor: "#454545", color: "white", padding: "20px" }}
-      >
-        <h2
-          style={{ marginBottom: "20px", fontSize: "1.5em", color: "#FBBF24" }}
-        >
-          My Favorites
-        </h2>
+      <div style={{ ...containerStyle, padding: "20px" }}>
+        <h2 style={categoryTitleStyle}>My Favorites</h2>
         {favorites.length > 0 ? (
           <div style={movieRowStyle}>
             {favorites.map((movie) => (
@@ -371,18 +424,10 @@ const MainContent: React.FC<MainContentProps> = ({
   }
 
   return (
-    <div style={{ backgroundColor: "#454545", color: "white" }}>
+    <div style={containerStyle}>
       {formattedResults.length > 0 ? (
-        <div style={{ marginBottom: "40px" }}>
-          <h2
-            style={{
-              marginBottom: "20px",
-              fontSize: "1.5em",
-              padding: "0 20px",
-            }}
-          >
-            Search Results
-          </h2>
+        <div style={{ marginBottom: isMobile ? "30px" : "40px" }}>
+          <h2 style={categoryTitleStyle}>Search Results</h2>
           <div style={movieRowStyle}>
             {formattedResults.map((movie) => (
               <div key={movie.id}>{renderMovieCard(movie)}</div>
@@ -391,16 +436,11 @@ const MainContent: React.FC<MainContentProps> = ({
         </div>
       ) : (
         categories.map((category) => (
-          <div key={category.name} style={{ marginBottom: "40px" }}>
-            <h2
-              style={{
-                marginBottom: "20px",
-                fontSize: "1.5em",
-                padding: "0 20px",
-              }}
-            >
-              {category.name}
-            </h2>
+          <div
+            key={category.name}
+            style={{ marginBottom: isMobile ? "30px" : "40px" }}
+          >
+            <h2 style={categoryTitleStyle}>{category.name}</h2>
             <div style={movieRowStyle}>
               {category.movies.map((movie) => (
                 <div key={movie.id}>{renderMovieCard(movie)}</div>

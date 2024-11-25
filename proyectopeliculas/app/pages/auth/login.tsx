@@ -35,7 +35,10 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
   }, [user, router, onClose]);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -83,7 +86,7 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 1000,
+      zIndex: 9999,
       padding: isMobile ? "20px" : 0,
       background: "rgba(0, 0, 0, 0.5)",
     },
@@ -96,6 +99,8 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
       overflow: "hidden",
       border: "1px solid white",
       margin: "auto",
+      position: "relative" as const,
+      zIndex: 10000,
     },
     content: {
       display: "flex",
@@ -116,13 +121,13 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
       display: isMobile ? "none" : "flex",
       width: "calc(50% - 8px)",
       minHeight: "600px",
-      margin: "15px",
+      margin: "15px 15px 15px 15px",
       padding: "48px 48px 0 48px",
       background: "#18181B",
       flexDirection: "column" as const,
       alignItems: "center",
       justifyContent: "flex-start",
-      borderRadius: "16px 16px 0 0",
+      borderRadius: "0 16px  16px 0",
       position: "relative" as const,
       overflow: "hidden",
     },
@@ -239,17 +244,6 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
       alignItems: "center",
       justifyContent: "center",
       gap: "8px",
-      transition: "all 0.2s ease",
-    },
-    footerText: {
-      position: "absolute" as const,
-      bottom: isMobile ? "16px" : "24px",
-      fontSize: "12px",
-      left: 0,
-      right: 0,
-      textAlign: "center" as const,
-      color: "rgba(255, 255, 255, 0.6)",
-      marginBottom: isMobile ? "0" : "80px",
     },
     title: {
       color: "white",
@@ -263,8 +257,16 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
       fontSize: "18px",
       textAlign: "center" as const,
       marginBottom: "32px",
-      maxWidth: "400px",
-      lineHeight: "1.5",
+    },
+    footerText: {
+      position: "absolute" as const,
+      bottom: isMobile ? "16px" : "24px",
+      fontSize: "12px",
+      left: 0,
+      right: 0,
+      textAlign: "center" as const,
+      color: "rgba(255, 255, 255, 0.6)",
+      marginBottom: isMobile ? "0" : "80px",
     },
     imageWrapper: {
       position: "relative" as const,
@@ -344,7 +346,7 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
                 }}
                 disabled={loading}
               >
-                {loading ? "Iniciando sesión..." : "Continue"}
+                {loading ? "Loading..." : "Continue"}
                 {!loading && <Ticket size={14} />}
               </button>
             </form>
@@ -367,8 +369,7 @@ const SignUpModal: React.FC<SignUpModalProps> = ({
               <Image
                 src="/login.png"
                 alt="Login illustration"
-                width={380}
-                height={380}
+                fill
                 style={{ objectFit: "contain" }}
                 priority
               />

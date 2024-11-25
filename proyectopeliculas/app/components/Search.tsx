@@ -36,6 +36,17 @@ const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<string>("All Genres");
   const [genres, setGenres] = useState<Genre[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchGenres = async () => {
@@ -113,8 +124,11 @@ const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
   const styles = {
     container: {
       padding: "20px",
-      backgroundColor: "#1a1a1a",
-      height: "100%",
+
+      height: isMobile ? "auto" : "100%",
+      position: "relative" as const,
+      zIndex: 10,
+      width: isMobile ? "100%" : "auto",
     } as CSSProperties,
     title: {
       color: "white",
@@ -124,29 +138,33 @@ const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
     } as CSSProperties,
     searchSection: {
       marginBottom: "20px",
+      position: "relative" as const,
     } as CSSProperties,
     searchInput: {
       width: "100%",
-      padding: "8px 12px",
+      padding: "12px",
       backgroundColor: "#121212",
       border: "1px solid #232323",
       borderRadius: "4px",
       color: "white",
       fontSize: "14px",
+      transition: "border-color 0.3s ease",
     } as CSSProperties,
     genresContainer: {
       position: "relative",
       width: "100%",
+      marginBottom: isMobile ? "20px" : "0",
     } as CSSProperties,
     genresButton: {
       width: "100%",
-      padding: "8px 12px",
+      padding: "12px",
       backgroundColor: "#121212",
       border: "1px solid #232323",
       borderRadius: "4px",
       color: "#999",
       textAlign: "left",
       cursor: "pointer",
+      transition: "border-color 0.3s ease",
     } as CSSProperties,
     dropdownContent: {
       position: "absolute",
@@ -156,19 +174,22 @@ const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
       backgroundColor: "#121212",
       border: "1px solid #232323",
       borderRadius: "4px",
-      maxHeight: "300px",
+      maxHeight: isMobile ? "200px" : "300px",
       overflowY: "auto",
-      zIndex: 1000,
+      zIndex: 20,
+      marginTop: "4px",
+      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
     } as CSSProperties,
     genreOption: {
       width: "100%",
-      padding: "8px 12px",
+      padding: "12px",
       backgroundColor: "transparent",
       border: "none",
       color: "white",
       textAlign: "left",
       cursor: "pointer",
       transition: "background-color 0.2s",
+      fontSize: "14px",
     } as CSSProperties,
   };
 
@@ -228,6 +249,14 @@ const Search: React.FC<SearchProps> = ({ onSearchResults }) => {
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .genres-dropdown {
+            position: relative !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

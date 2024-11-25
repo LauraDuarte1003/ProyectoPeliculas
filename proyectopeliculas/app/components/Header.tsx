@@ -105,6 +105,15 @@ const Header: React.FC<HeaderProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -142,16 +151,26 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header style={styles.header}>
-        <div style={styles.logoContainer}>
+        <div
+          style={{
+            ...styles.logoContainer,
+            gap: windowWidth <= 768 ? "16px" : "32px",
+            height: windowWidth <= 768 ? "40px" : "50px",
+          }}
+        >
           <Link href="/">
             <div
-              style={{ position: "relative", width: "150px", height: "50px" }}
+              style={{
+                position: "relative",
+                width: windowWidth <= 768 ? "100px" : "150px",
+                height: windowWidth <= 768 ? "40px" : "50px",
+              }}
             >
               <Image
                 src="/Logo.jpeg"
                 alt="QuickBet Movies Logo"
                 fill
-                sizes="150px"
+                sizes="(max-width: 768px) 100px, 150px"
                 style={{ objectFit: "contain" }}
                 priority
               />
@@ -188,11 +207,14 @@ const Header: React.FC<HeaderProps> = ({
             onClick={handleButtonClick}
             style={{
               ...styles.userButton,
+              width: windowWidth <= 768 ? "35px" : "40px",
+              height: windowWidth <= 768 ? "35px" : "40px",
+              padding: windowWidth <= 768 ? "6px" : "8px",
               borderColor: user ? "#FBBF24" : "white",
               color: user ? "#FBBF24" : "white",
             }}
           >
-            <CircleUserRound size={50} />
+            <CircleUserRound size={windowWidth <= 768 ? 20 : 50} />
           </button>
 
           {showMenu && (

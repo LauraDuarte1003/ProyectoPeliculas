@@ -78,7 +78,7 @@ const SignUpComponent: React.FC<SignUpProps> = ({
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 1000,
+      zIndex: 9999,
       padding: isMobile ? "20px" : 0,
       background: "rgba(0, 0, 0, 0.5)",
     },
@@ -92,8 +92,9 @@ const SignUpComponent: React.FC<SignUpProps> = ({
       overflow: "hidden",
       border: "1px solid white",
       margin: "auto",
+      position: "relative" as const,
+      zIndex: 10000,
     },
-
     content: {
       display: "flex",
       width: "100%",
@@ -121,7 +122,7 @@ const SignUpComponent: React.FC<SignUpProps> = ({
       flexDirection: "column" as const,
       alignItems: "center",
       justifyContent: "flex-start",
-      borderRadius: "16px 16px 0 0",
+      borderRadius: "0 16px  16px 0",
       position: "relative" as const,
       overflow: "hidden",
     },
